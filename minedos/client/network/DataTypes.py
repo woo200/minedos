@@ -73,3 +73,13 @@ class UUID:
     @staticmethod
     def read(stream) -> uuid.UUID:
         return uuid.UUID(bytes=stream.read(16))
+
+class ByteArray:
+    @staticmethod
+    def write(data: bytes) -> bytes:
+        return VarInt.write(len(data)) + data
+    
+    @staticmethod
+    def read(stream) -> bytes:
+        length, _ = VarInt.read(stream)
+        return stream.read(length)

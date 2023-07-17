@@ -25,6 +25,9 @@ class PacketBuilder:
     
     def write_uuid(self, data: uuid.UUID) -> None:
         self.packet_bytes.write(DataTypes.UUID.write(data))
+
+    def write_bytearray(self, data) -> None:
+        self.packet_bytes.write(DataTypes.ByteArray.write(data))
     
     def write_boolean(self, data: bool) -> None:
         self.packet_bytes.write(DataTypes.Boolean.write(data))
@@ -50,6 +53,9 @@ class PacketReader:
 
     def read_uuid(self) -> uuid.UUID:
         return DataTypes.UUID.read(self.stream)
+    
+    def read_bytearray(self) -> bytes:
+        return DataTypes.ByteArray.read(self.stream)
 
     def verify_tell(self, length: int) -> None:
         return self.stream.tell() == length
