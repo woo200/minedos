@@ -2,6 +2,7 @@
 # Licensed under the MIT License. See LICENSE file in the project root for full license information.
 
 import struct
+import uuid
 import io
 from minedos.client.network import DataTypes
 
@@ -21,6 +22,9 @@ class PacketBuilder:
     
     def write_unsigned_short(self, data: int) -> None:
         self.packet_bytes.write(struct.pack(">H", data))
+    
+    def write_uuid(self, data: uuid.UUID) -> None:
+        self.packet_bytes.write(DataTypes.UUID.write(data))
     
     def write_boolean(self, data: bool) -> None:
         self.packet_bytes.write(DataTypes.Boolean.write(data))
@@ -43,6 +47,9 @@ class PacketReader:
     
     def read_boolean(self) -> bool:
         return DataTypes.Boolean.read(self.stream)
+
+    def read_uuid(self) -> uuid.UUID:
+        return DataTypes.UUID.read(self.stream)
 
     def verify_tell(self, length: int) -> None:
         return self.stream.tell() == length

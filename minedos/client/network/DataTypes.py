@@ -2,6 +2,7 @@
 # Licensed under the MIT License. See LICENSE file in the project root for full license information.
 
 import struct
+import uuid
 import io
 
 class VarInt:
@@ -63,4 +64,12 @@ class Boolean:
     @staticmethod
     def read(stream) -> bool:
         return struct.unpack("?", stream.read(1))[0]
+
+class UUID:
+    @staticmethod
+    def write(data: uuid.UUID) -> bytes:
+        return struct.pack(">QQ", data.int >> 64, data.int & (2 ** 64 - 1))
     
+    @staticmethod
+    def read(stream) -> uuid.UUID:
+        return uuid.UUID(int=(struct.unpack(">QQ", stream.read(16))[0] << 64) | struct.unpack(">QQ", stream.read(16))[1])
