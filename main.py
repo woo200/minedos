@@ -4,7 +4,7 @@
 import minedos
 import uuid
 
-client = minedos.MinecraftClient("top.twerion.net", 
+client = minedos.MinecraftClient("localhost", 
                                  username="Notch",
                                  uuid=uuid.UUID("069a79f4-44e9-4726-a5be-fca90e38aaf5"),
                                  session_token="")

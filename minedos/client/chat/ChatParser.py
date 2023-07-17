@@ -41,6 +41,42 @@ class TextComponent:
         translation_table = json.load(open(f"lang/{language}.json"))
         return translation_table[key]
     
+    def __format_mc(self, text, table):
+        final_text = ""
+
+        is_placeholder = False
+        skip_next = False
+        current_placeholder_num = ""
+
+        for c in text:
+            if skip_next:
+                skip_next = False
+                continue
+            if c == "%":
+                is_placeholder = True
+                continue
+            if is_placeholder:
+                if c == "$":
+                    final_text += table[int(current_placeholder_num)-1]
+                    current_placeholder_num = ""
+                    is_placeholder = False
+                    skip_next = True
+                else:
+                    current_placeholder_num += c
+                continue
+            final_text += c
+        return final_text
+
+    def __render_translatable_textcomp(self, language, component):
+        translated_text = self.__get_translatable_textcomp(language, component["translate"])
+
+        if "with" in component:
+            insertion_table = []
+            for subcomponent in component["with"]:
+                insertion_table.append(ChatParser.parse(subcomponent))
+            translated_text = self.__format_mc(translated_text, insertion_table)
+        return translated_text
+        
     def render(self, lang="en_us"):
         bold = Style.BRIGHT if self.args["bold"] else ""
         italic = Style.ITALIC if self.args["italic"] else ""
@@ -53,7 +89,7 @@ class TextComponent:
             color = self.__color_table[self.args["color"]]
         
         if self.args["translate"]:
-            self.args["text"] = self.__get_translatable_textcomp(lang, self.args["translate"])
+            self.args["text"] = self.__render_translatable_textcomp(lang, self.args)
 
         return f"{bold}{italic}{underlined}{strikethrough}{obfuscated}{color}{self.args['text']}"
 

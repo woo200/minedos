@@ -90,17 +90,24 @@ class PacketReader:
         socket.settimeout(5)
         try:
             length, _ = DataTypes.VarInt.read_socket(socket)
-            if compression and length > compression:
+            # print(length)
+
+            if compression:
                 data_length, num = DataTypes.VarInt.read_socket(socket)
-                data = socket.recv(length - num)
-                data = zlib.decompress(data)
-                packet_id = data[0]
-                data = data[1:]
-                return data_length, packet_id, data
+                if data_length > compression:
+                    data = socket.recv(length - num)
+                    data = zlib.decompress(data)
+                    data_stream = io.BytesIO(data)
+                    packet_id, pidlen = DataTypes.VarInt.read(data_stream)
+                    data = data[pidlen:]
+
+                    return data_length - pidlen, packet_id, data
+                length -= num
             
-            packet_id = socket.recv(1)[0]
-            data = socket.recv(length - 1)
-            return length, packet_id, data
+            packet_id, pidlen = DataTypes.VarInt.read_socket(socket)
+            data = socket.recv(length - pidlen)
+            
+            return length - pidlen, packet_id, data
         except (ValueError, struct.error):
             raise ValueError("Invalid packet data")
             

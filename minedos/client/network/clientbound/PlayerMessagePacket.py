@@ -84,7 +84,7 @@ class PlayerMessagePacket(BasePacket):
 
         try:
             sender = reader.read_uuid()
-            index = reader.read_varint()
+            index, _ = reader.read_varint()
             message_sig_present = reader.read_boolean()
             message_sig = None
             if message_sig_present:
@@ -92,19 +92,21 @@ class PlayerMessagePacket(BasePacket):
             message = reader.read_string()
             timestamp = reader.read_long()
             salt = reader.read_long()
-            total_prev_messages = reader.read_varint()
+            total_prev_messages, _ = reader.read_varint()
             old_messages = []
-            for i in range(total_prev_messages):
-                message_id = reader.read_varint()
+            for _ in range(total_prev_messages):
+                message_id, _ = reader.read_varint()
                 signature = reader.read_bytearray()
                 old_messages.append((message_id, signature))
             unsigned_content_present = reader.read_boolean()
             unsigned_content = None
             if unsigned_content_present:
                 unsigned_content = json.loads(reader.read_string())
-            filter_type = reader.read_varint()
-            filter_type_bits = reader.read_bitset()
-            chat_type = reader.read_varint()
+            filter_type, _ = reader.read_varint()
+            filter_type_bits = []
+            if filter_type != 0:
+                filter_type_bits = reader.read_bitset()
+            chat_type, _ = reader.read_varint()
             network_name = json.loads(reader.read_string())
             network_target_present = reader.read_boolean()
             network_target_name = None

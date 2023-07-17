@@ -1,9 +1,11 @@
 # Copyright (c) John Woo. All rights reserved.
 # Licensed under the MIT License. See LICENSE file in the project root for full license information.
 
+import time
 import socket
 import sockslib 
 import requests
+import traceback
 import dns.resolver
 
 import minedos.client.network
@@ -89,16 +91,16 @@ class MinecraftClient:
             return
     
     def __handle_disconnect_login(self, length, data):
-        login_fail_packet = minedos.client.network.clientbound.LoginDisconnectReasonPacket.read(length-1, data)
+        login_fail_packet = minedos.client.network.clientbound.LoginDisconnectReasonPacket.read(length, data)
         print(login_fail_packet)
 
     def __handle_set_compression_login(self, length, data):
-        set_compression_packet = minedos.client.network.clientbound.SetCompressionPacket.read(length-1, data)
+        set_compression_packet = minedos.client.network.clientbound.SetCompressionPacket.read(length, data)
         self.compression = set_compression_packet.threshold
         print(f"Compression set to {self.compression}")
     
     def __handle_encryption_request(self, length, data):
-        encryption_request_packet = minedos.client.network.clientbound.EncryptionRequestPacket.read(length-1, data)
+        encryption_request_packet = minedos.client.network.clientbound.EncryptionRequestPacket.read(length, data)
 
         session_key = get_random_bytes(16)
         cipher = PKCS1_v1_5.new(encryption_request_packet.public_key)
@@ -126,27 +128,46 @@ class MinecraftClient:
                                                                        session_key, 
                                                                        self.client_socket)
 
+    def send_message(self, message):
+        message_packet = minedos.client.network.serverbound.PlayerMessagePacket(message, round(time.time()), 0, False, None, 0, [])
+        message_packet.set_compression(self.compression)
+        data = message_packet.get_bytes()
+        self.client_socket.send(data)
+
     def __handle_login_success(self, length, data):
-        login_success_packet = minedos.client.network.clientbound.LoginSuccessPacket.read(length-1, data)
+        login_success_packet = minedos.client.network.clientbound.LoginSuccessPacket.read(length, data)
         self.client_state = ClientState.PLAY
         print(f"Logged in as {login_success_packet.username} [{login_success_packet.uuid}]")
 
     def __handle_system_message(self, length, data):
-        system_message_packet = minedos.client.network.clientbound.SystemMessagePacket.read(length-1, data)
+        system_message_packet = minedos.client.network.clientbound.SystemMessagePacket.read(length, data)
         print(system_message_packet.to_chat())
+        self.send_message("Hello World!")
     
     def __handle_player_message(self, length, data):
         try:
-            player_message_packet = minedos.client.network.clientbound.PlayerMessagePacket.read(length-1, data)
+            player_message_packet = minedos.client.network.clientbound.PlayerMessagePacket.read(length, data)
         except Exception as e:
-            e.with_traceback()
+            print(traceback.format_exc())
             return
-        print(player_message_packet)
+        message = player_message_packet.message
+        player = player_message_packet.network_name['hoverEvent']['contents']['name']
+        player = minedos.client.chat.ChatParser.parse(player)
+
+        print(f"{player}: {message}")
+    
+    def __handle_keepalive(self, length, data):
+        keepalive_packet = minedos.client.network.clientbound.KeepAlivePacket.read(length, data)
+        keepalive_response = minedos.client.network.serverbound.KeepAlivePacket(keepalive_packet.keepalive_id)
+        keepalive_response.set_compression(self.compression)
+
+        self.client_socket.send(keepalive_response.get_bytes())
 
     def __handle_bundle(self):
         state_play_packet_handlers = {
             0x64: self.__handle_system_message,
             0x35: self.__handle_player_message,
+            0x23: self.__handle_keepalive,
         }
         for packet in self.bundled_packets:
             packet_id, length, data = packet
@@ -166,20 +187,21 @@ class MinecraftClient:
 
         try:
             length, packet_id, data = minedos.client.network.PacketTools.PacketReader.read_packet(self.client_socket, self.compression)
-        except KeyboardInterrupt:
-            raise KeyboardInterrupt
-        except:
-            return
+        except Exception as e:
+            print(e)
+
 
         if self.client_state == ClientState.LOGIN:
             state_login_packet_handlers[packet_id](length, data)
         if self.client_state == ClientState.PLAY:
-            if packet_id != 0x00:
-                self.bundled_packets += [(packet_id, length, data)]
-            else:
-                self.__handle_bundle()
-                self.bundled_packets = []
-
+            # if packet_id != 0x00:
+            #     self.bundled_packets += [(packet_id, length, data)]
+            # else:
+            #     self.__handle_bundle()
+            #     self.bundled_packets = []
+            self.bundled_packets += [(packet_id, length, data)]
+            self.__handle_bundle()
+            self.bundled_packets = []
 
     def connect(self):
         self.client_socket.connect((self.real_host, self.arguments["port"]))
@@ -189,11 +211,11 @@ class MinecraftClient:
                                                                   self.arguments["port"], 
                                                                   2) # Send login handshake packet
         self.client_socket.send(handshake_packet.get_bytes())
-        self.client_state = ClientState.LOGIN
 
         login_start_packet = minedos.client.network.serverbound.LoginStartPacket(self.arguments["username"],
                                                                                  self.arguments["uuid"])
         self.client_socket.send(login_start_packet.get_bytes())
-        
+
+        self.client_state = ClientState.LOGIN
         while True:
             self.__handle_receive_packet()

@@ -15,14 +15,16 @@ class BasePacket:
     def get_bytes(self) -> None:
         data = bytes([self.packet_id]) + self.build()
     
-        if self.compression and len(data) > self.compression:
-            d_len = len(data)
-            data = zlib.compress(data)
-            data_length = DataTypes.VarInt.write(d_len)
-            packet_length = DataTypes.VarInt.write(len(data) + len(data_length))
-            return packet_length + data_length + data
-        else:
-            return DataTypes.VarInt.write(len(data)) + data
+        if self.compression != None:
+            if len(data) > self.compression:
+                d_len = len(data)
+                data = zlib.compress(data)
+                data_length = DataTypes.VarInt.write(d_len)
+                packet_length = DataTypes.VarInt.write(len(data) + len(data_length))
+                return packet_length + data_length + data
+            data = DataTypes.VarInt.write(0) + data
+        
+        return DataTypes.VarInt.write(len(data)) + data
     
     def build(self) -> None:
         return None
