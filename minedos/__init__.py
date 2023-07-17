@@ -3,3 +3,4 @@
 
 __version__ = "v0.0.1"
 
+from minedos.client import MinecraftClient
