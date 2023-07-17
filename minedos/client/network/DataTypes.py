@@ -72,4 +72,4 @@ class UUID:
     
     @staticmethod
     def read(stream) -> uuid.UUID:
-        return uuid.UUID(int=(struct.unpack(">QQ", stream.read(16))[0] << 64) | struct.unpack(">QQ", stream.read(16))[1])
+        return uuid.UUID(bytes=stream.read(16))
