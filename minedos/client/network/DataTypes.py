@@ -143,6 +143,15 @@ class Long:
     def read(stream) -> int:
         return struct.unpack(">q", stream.read(8))[0]
 
+class Short:
+    @staticmethod
+    def write(data: int) -> bytes:
+        return struct.pack(">h", data)
+    
+    @staticmethod
+    def read(stream) -> int:
+        return struct.unpack(">h", stream.read(2))[0]
+
 class BitSet:
     @staticmethod
     def write(data: list) -> bytes:

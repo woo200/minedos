@@ -9,3 +9,4 @@ from minedos.client.network.clientbound.LoginSuccessPacket import LoginSuccessPa
 from minedos.client.network.clientbound.SystemMessagePacket import SystemMessagePacket
 from minedos.client.network.clientbound.PlayerMessagePacket import PlayerMessagePacket
 from minedos.client.network.clientbound.KeepAlivePacket import KeepAlivePacket
+from minedos.client.network.clientbound.EntityPositionUpdatePacket import EntityPositionUpdatePacket

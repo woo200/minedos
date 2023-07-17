@@ -142,7 +142,7 @@ class MinecraftClient:
     def __handle_system_message(self, length, data):
         system_message_packet = minedos.client.network.clientbound.SystemMessagePacket.read(length, data)
         print(system_message_packet.to_chat())
-        self.send_message("Hello World!")
+        # self.send_message("Hello World!")
     
     def __handle_player_message(self, length, data):
         try:
@@ -163,11 +163,16 @@ class MinecraftClient:
 
         self.client_socket.send(keepalive_response.get_bytes())
 
+    def __handle_entity_pos_update(self, length, data):
+        entity_pos_update_packet = minedos.client.network.clientbound.EntityPositionUpdatePacket.read(length, data)
+        # print(entity_pos_update_packet)
+
     def __handle_bundle(self):
         state_play_packet_handlers = {
             0x64: self.__handle_system_message,
             0x35: self.__handle_player_message,
             0x23: self.__handle_keepalive,
+            0x2B: self.__handle_entity_pos_update,
         }
         for packet in self.bundled_packets:
             packet_id, length, data = packet

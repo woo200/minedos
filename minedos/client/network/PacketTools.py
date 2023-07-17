@@ -45,6 +45,9 @@ class PacketBuilder:
     def write_long(self, data: int) -> None:
         self.packet_bytes.write(DataTypes.Long.write(data))
 
+    def write_short(self, data: int) -> None:
+        self.packet_bytes.write(DataTypes.Short.write(data))
+
 class PacketReader:
     def __init__(self, data) -> None:
         if isinstance(data, io.BytesIO):
@@ -81,6 +84,9 @@ class PacketReader:
     
     def read_bitset(self) -> list:
         return DataTypes.BitSet.read(self.stream)
+
+    def read_short(self) -> int:
+        return DataTypes.Short.read(self.stream)
 
     def verify_tell(self, length: int) -> None:
         return self.stream.tell() == length
