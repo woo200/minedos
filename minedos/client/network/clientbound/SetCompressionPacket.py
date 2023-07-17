@@ -6,18 +6,17 @@ import json
 
 from minedos.client.network.BasePacket import BasePacket
 from minedos.client.network.PacketTools import PacketBuilder, PacketReader
-from minedos.client.chat.ChatParser import ChatParser
 
-class LoginDisconnectReasonPacket(BasePacket):
-    def __init__(self, disconnect_reason) -> None:
-        super().__init__(0x00)
+class SetCompressionPacket(BasePacket):
+    def __init__(self, threshold) -> None:
+        super().__init__(0x03)
 
-        self.disconnect_reason = disconnect_reason
+        self.threshold = threshold
     
     def build(self):
         builder = PacketBuilder()
 
-        builder.write_string(json.dumps(self.disconnect_reason))
+        builder.write_varint(self.threshold)
 
         return builder.get_bytes()
 
@@ -26,7 +25,7 @@ class LoginDisconnectReasonPacket(BasePacket):
         reader = PacketReader(data)
 
         try:
-            disconnect_reason = json.loads(reader.read_string())
+            threshold, _ = reader.read_varint()
         except (ValueError, struct.error, json.JSONDecodeError):
             raise ValueError("Invalid packet data")
 
@@ -34,7 +33,7 @@ class LoginDisconnectReasonPacket(BasePacket):
         if not reader.verify_tell(total_length):
             raise ValueError(f"Packet length mismatch (expected {total_length} bytes, got {reader.stream.tell()} bytes)")
         
-        return LoginDisconnectReasonPacket(disconnect_reason)
+        return SetCompressionPacket(threshold)
 
     def __repr__(self) -> str:
-        return f"{type(self).__name__}(disconnect_reason=\"{ChatParser.parse(self.disconnect_reason)}\")"
+        return f"{type(self).__name__}(threshold={self.threshold})"

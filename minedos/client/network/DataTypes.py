@@ -100,3 +100,36 @@ class ByteArray:
     def read(stream) -> bytes:
         length, _ = VarInt.read(stream)
         return stream.read(length)
+
+class Property:
+    @staticmethod
+    def write(data) -> bytes:
+        name, value, signature = data
+        
+        data = String.write(name) + String.write(value)
+        if signature is not None:
+            data += Boolean.write(True) + String.write(signature)
+        else:
+            data += Boolean.write(False)
+        return data
+
+    @staticmethod
+    def read(stream):
+        name = String.read(stream)
+        value = String.read(stream)
+        has_signature = Boolean.read(stream)
+        if has_signature:
+            signature = String.read(stream)
+        else:
+            signature = None
+        return name, value, signature
+
+class Array:
+    @staticmethod
+    def read(stream, data_type):
+        length, _ = VarInt.read(stream)
+        return [data_type.read(stream) for _ in range(length)]
+    
+    @staticmethod
+    def write(data, data_type):
+        return VarInt.write(len(data)) + b"".join([data_type.write(d) for d in data])

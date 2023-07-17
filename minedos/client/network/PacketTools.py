@@ -3,6 +3,7 @@
 
 import struct
 import uuid
+import zlib
 import io
 from minedos.client.network import DataTypes
 
@@ -32,6 +33,12 @@ class PacketBuilder:
     def write_boolean(self, data: bool) -> None:
         self.packet_bytes.write(DataTypes.Boolean.write(data))
 
+    def write_property(self, name, value, signature=None) -> None:
+        self.packet_bytes.write(DataTypes.Property.write(name, value, signature))
+    
+    def write_array(self, data_type, data) -> None:
+        self.packet_bytes.write(DataTypes.Array.write(data_type, data))
+
 class PacketReader:
     def __init__(self, data) -> None:
         if isinstance(data, io.BytesIO):
@@ -57,14 +64,27 @@ class PacketReader:
     def read_bytearray(self) -> bytes:
         return DataTypes.ByteArray.read(self.stream)
 
+    def read_property(self) -> tuple:
+        return DataTypes.Property.read(self.stream)
+
+    def read_array(self, data_type) -> list:
+        return DataTypes.Array.read(self.stream, data_type)
+
     def verify_tell(self, length: int) -> None:
         return self.stream.tell() == length
 
     @staticmethod
-    def read_packet(socket):
+    def read_packet(socket, compression=None):
         socket.settimeout(5)
         try:
             length, _ = DataTypes.VarInt.read_socket(socket)
+            if compression and length > compression:
+                data_length, num = DataTypes.VarInt.read_socket(socket)
+                data = socket.recv(length - num)
+                data = zlib.decompress(data)
+                packet_id = data[0]
+                data = data[1:]
+                return data_length, packet_id, data
             packet_id = socket.recv(1)[0]
             data = socket.recv(length - 1)
             return length, packet_id, data

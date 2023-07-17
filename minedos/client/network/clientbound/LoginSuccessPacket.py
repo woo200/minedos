@@ -4,20 +4,25 @@
 import struct
 import json
 
+from minedos.client.network import DataTypes
 from minedos.client.network.BasePacket import BasePacket
 from minedos.client.network.PacketTools import PacketBuilder, PacketReader
-from minedos.client.chat.ChatParser import ChatParser
 
-class LoginDisconnectReasonPacket(BasePacket):
-    def __init__(self, disconnect_reason) -> None:
-        super().__init__(0x00)
 
-        self.disconnect_reason = disconnect_reason
+class LoginSuccessPacket(BasePacket):
+    def __init__(self, uuid, username, properties) -> None:
+        super().__init__(0x02)
+
+        self.uuid = uuid
+        self.username = username
+        self.properties = properties
     
     def build(self):
         builder = PacketBuilder()
 
-        builder.write_string(json.dumps(self.disconnect_reason))
+        builder.write_uuid(self.uuid)
+        builder.write_string(self.username)
+        builder.write_array(self.properties)
 
         return builder.get_bytes()
 
@@ -26,15 +31,17 @@ class LoginDisconnectReasonPacket(BasePacket):
         reader = PacketReader(data)
 
         try:
-            disconnect_reason = json.loads(reader.read_string())
-        except (ValueError, struct.error, json.JSONDecodeError):
+            uuid = reader.read_uuid()
+            username = reader.read_string()
+            properties = reader.read_array(DataTypes.Property)
+        except (ValueError, struct.error):
             raise ValueError("Invalid packet data")
 
         # Check if the packet length is correct
         if not reader.verify_tell(total_length):
             raise ValueError(f"Packet length mismatch (expected {total_length} bytes, got {reader.stream.tell()} bytes)")
         
-        return LoginDisconnectReasonPacket(disconnect_reason)
+        return LoginSuccessPacket(uuid, username, properties)
 
     def __repr__(self) -> str:
-        return f"{type(self).__name__}(disconnect_reason=\"{ChatParser.parse(self.disconnect_reason)}\")"
+        return f"{type(self).__name__}(uuid={self.uuid}, username={self.username}, properties={self.properties})"
