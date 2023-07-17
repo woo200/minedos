@@ -2,8 +2,8 @@
 # Licensed under the MIT License. See LICENSE file in the project root for full license information.
 
 import struct
-from minedos.client.network import BasePacket
-from minedos.client.network import PacketBuilder, PacketReader
+from minedos.client.network.BasePacket import BasePacket
+from minedos.client.network.PacketTools import PacketBuilder, PacketReader
 
 class LoginStartPacket(BasePacket):
     def __init__(self, username: str, uuid: str = None) -> None:
