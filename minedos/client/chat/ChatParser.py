@@ -1,10 +1,29 @@
 # Copyright (c) John Woo. All rights reserved.
 # Licensed under the MIT License. See LICENSE file in the project root for full license information.
 
-from colored import Fore, Back, Style
+from colored import Fore, Style
 import json
 
 class TextComponent:
+    __color_table = {
+        "black": Fore.BLACK,
+        "dark_blue": Fore.BLUE,
+        "dark_green": Fore.GREEN,
+        "dark_aqua": Fore.CYAN,
+        "dark_red": Fore.RED,
+        "dark_purple": Fore.MAGENTA,
+        "gold": Fore.YELLOW,
+        "gray": Fore.WHITE,
+        "dark_gray": Fore.BLACK,
+        "blue": Fore.BLUE,
+        "green": Fore.GREEN,
+        "aqua": Fore.CYAN,
+        "red": Fore.RED,
+        "light_purple": Fore.MAGENTA,
+        "yellow": Fore.YELLOW,
+        "white": Fore.WHITE
+    }
+
     def __init__(self, **kwargs) -> None:
         defaults = {
             "bold": False,
@@ -28,7 +47,10 @@ class TextComponent:
         underlined = Style.UNDERLINE if self.args["underlined"] else ""
         strikethrough = Style.STRIKETHROUGH if self.args["strikethrough"] else ""
         obfuscated = Style.BLINK if self.args["obfuscated"] else ""
-        color = Fore.__dict__[self.args["color"].upper()]
+        
+        color = "white"
+        if color in self.__color_table:
+            color = self.__color_table[self.args["color"]]
         
         if self.args["translate"]:
             self.args["text"] = self.__get_translatable_textcomp(lang, self.args["translate"])

@@ -72,6 +72,8 @@ class MinecraftClient:
         self.client_state = ClientState.HANDSHAKE
         self.compression = None
 
+        self.bundled_packets = []
+
     def __resolve_srv_record(self):
         try:
             answers = dns.resolver.query(f'_minecraft._tcp.{self.arguments["host"]}', 'SRV')
@@ -127,7 +129,32 @@ class MinecraftClient:
     def __handle_login_success(self, length, data):
         login_success_packet = minedos.client.network.clientbound.LoginSuccessPacket.read(length-1, data)
         self.client_state = ClientState.PLAY
-        print(f"Logged in as {login_success_packet.username}")
+        print(f"Logged in as {login_success_packet.username} [{login_success_packet.uuid}]")
+
+    def __handle_system_message(self, length, data):
+        system_message_packet = minedos.client.network.clientbound.SystemMessagePacket.read(length-1, data)
+        print(system_message_packet.to_chat())
+    
+    def __handle_player_message(self, length, data):
+        try:
+            player_message_packet = minedos.client.network.clientbound.PlayerMessagePacket.read(length-1, data)
+        except Exception as e:
+            e.with_traceback()
+            return
+        print(player_message_packet)
+
+    def __handle_bundle(self):
+        state_play_packet_handlers = {
+            0x64: self.__handle_system_message,
+            0x35: self.__handle_player_message,
+        }
+        for packet in self.bundled_packets:
+            packet_id, length, data = packet
+            if packet_id in state_play_packet_handlers:
+                try:
+                    state_play_packet_handlers[packet_id](length, data)
+                except ValueError:
+                    pass
 
     def __handle_receive_packet(self):
         state_login_packet_handlers = {
@@ -136,11 +163,23 @@ class MinecraftClient:
             0x02: self.__handle_login_success,
             0x03: self.__handle_set_compression_login,
         }
-        length, packet_id, data = minedos.client.network.PacketTools.PacketReader.read_packet(self.client_socket, self.compression)\
-        
+
+        try:
+            length, packet_id, data = minedos.client.network.PacketTools.PacketReader.read_packet(self.client_socket, self.compression)
+        except KeyboardInterrupt:
+            raise KeyboardInterrupt
+        except:
+            return
+
         if self.client_state == ClientState.LOGIN:
             state_login_packet_handlers[packet_id](length, data)
-        
+        if self.client_state == ClientState.PLAY:
+            if packet_id != 0x00:
+                self.bundled_packets += [(packet_id, length, data)]
+            else:
+                self.__handle_bundle()
+                self.bundled_packets = []
+
 
     def connect(self):
         self.client_socket.connect((self.real_host, self.arguments["port"]))

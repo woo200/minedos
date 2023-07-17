@@ -38,6 +38,12 @@ class PacketBuilder:
     
     def write_array(self, data_type, data) -> None:
         self.packet_bytes.write(DataTypes.Array.write(data_type, data))
+    
+    def write_bitset(self, data) -> None:
+        self.packet_bytes.write(DataTypes.BitSet.write(data))
+
+    def write_long(self, data: int) -> None:
+        self.packet_bytes.write(DataTypes.Long.write(data))
 
 class PacketReader:
     def __init__(self, data) -> None:
@@ -70,6 +76,12 @@ class PacketReader:
     def read_array(self, data_type) -> list:
         return DataTypes.Array.read(self.stream, data_type)
 
+    def read_long(self) -> int:
+        return DataTypes.Long.read(self.stream)
+    
+    def read_bitset(self) -> list:
+        return DataTypes.BitSet.read(self.stream)
+
     def verify_tell(self, length: int) -> None:
         return self.stream.tell() == length
 
@@ -85,6 +97,7 @@ class PacketReader:
                 packet_id = data[0]
                 data = data[1:]
                 return data_length, packet_id, data
+            
             packet_id = socket.recv(1)[0]
             data = socket.recv(length - 1)
             return length, packet_id, data

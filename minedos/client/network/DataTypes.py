@@ -105,7 +105,7 @@ class Property:
     @staticmethod
     def write(data) -> bytes:
         name, value, signature = data
-        
+
         data = String.write(name) + String.write(value)
         if signature is not None:
             data += Boolean.write(True) + String.write(signature)
@@ -133,3 +133,22 @@ class Array:
     @staticmethod
     def write(data, data_type):
         return VarInt.write(len(data)) + b"".join([data_type.write(d) for d in data])
+
+class Long:
+    @staticmethod
+    def write(data: int) -> bytes:
+        return struct.pack(">q", data)
+    
+    @staticmethod
+    def read(stream) -> int:
+        return struct.unpack(">q", stream.read(8))[0]
+
+class BitSet:
+    @staticmethod
+    def write(data: list) -> bytes:
+        return VarInt.write(len(data)) + b"".join([Long.write(d) for d in data])
+    
+    @staticmethod
+    def read(stream) -> list:
+        length, _ = VarInt.read(stream)
+        return [Long.read(stream) for _ in range(length)]

@@ -5,3 +5,5 @@ from minedos.client.network.clientbound.EncryptionRequestPacket import Encryptio
 from minedos.client.network.clientbound.LoginDisconnectReasonPacket import LoginDisconnectReasonPacket
 from minedos.client.network.clientbound.SetCompressionPacket import SetCompressionPacket
 from minedos.client.network.clientbound.LoginSuccessPacket import LoginSuccessPacket
+from minedos.client.network.clientbound.SystemMessagePacket import SystemMessagePacket
+from minedos.client.network.clientbound.PlayerMessagePacket import PlayerMessagePacket
