@@ -3,3 +3,4 @@
 
 from minedos.client.network.serverbound.HandshakePacket import HandshakePacket
 from minedos.client.network.serverbound.LoginStartPacket import LoginStartPacket
+from minedos.client.network.serverbound.EncryptionResponsePacket import EncryptionResponsePacket

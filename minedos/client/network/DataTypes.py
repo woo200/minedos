@@ -3,7 +3,6 @@
 
 import struct
 import uuid
-import io
 
 class VarInt:
     @staticmethod

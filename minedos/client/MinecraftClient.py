@@ -7,6 +7,9 @@ import dns.resolver
 
 import minedos.client.network
 
+from Crypto.Random import get_random_bytes
+from Crypto.Cipher import AES, PKCS1_v1_5
+
 class ClientState:
     HANDSHAKE = 0
     STATUS = 1
@@ -76,15 +79,31 @@ class MinecraftClient:
                                                                   self.arguments["host"], 
                                                                   self.arguments["port"], 
                                                                   2) # Send login handshake packet
-        print("Sending handshake packet")
         self.client_socket.send(handshake_packet.get_bytes())
         self.client_state = ClientState.LOGIN
 
         login_start_packet = minedos.client.network.serverbound.LoginStartPacket(self.arguments["username"],
                                                                                 self.arguments["uuid"])
-        print("Sending login start packet")
         self.client_socket.send(login_start_packet.get_bytes())
         
         length, packet_id, data = minedos.client.network.PacketTools.PacketReader.read_packet(self.client_socket)
         encryption_request_packet = minedos.client.network.clientbound.EncryptionRequestPacket.read(length-1, data)
-        print(encryption_request_packet)
+
+        session_key = get_random_bytes(16)
+        cipher = PKCS1_v1_5.new(encryption_request_packet.public_key)
+
+        encrypted_session_key = cipher.encrypt(session_key)
+        encrypted_verify_token = cipher.encrypt(encryption_request_packet.verify_token)
+
+        encryption_response_packet = minedos.client.network.serverbound.EncryptionResponsePacket(encrypted_session_key, 
+                                                                                                 encrypted_verify_token)
+        self.client_socket.send(encryption_response_packet.get_bytes())
+        
+        self.client_socket = minedos.client.network.AESEncryptedSocket(session_key, 
+                                                                       session_key, 
+                                                                       self.client_socket)
+        
+        length, packet_id, data = minedos.client.network.PacketTools.PacketReader.read_packet(self.client_socket)
+        if packet_id == 0x00:
+            login_fail_packet = minedos.client.network.clientbound.LoginDisconnectReasonPacket.read(length-1, data)
+            print(login_fail_packet)
