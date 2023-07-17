@@ -59,6 +59,15 @@ class PacketReader:
 
     def verify_tell(self, length: int) -> None:
         return self.stream.tell() == length
-    
-    
-    
+
+    @staticmethod
+    def receive_packet(socket):
+        socket.settimeout(5)
+        try:
+            length = DataTypes.VarInt.read_socket(socket)
+            packet_id = socket.recv(1)[0]
+            data = socket.recv(length - 1)
+            return length, packet_id, data
+        except (ValueError, struct.error):
+            raise ValueError("Invalid packet data")
+            

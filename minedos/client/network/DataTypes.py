@@ -37,6 +37,24 @@ class VarInt:
                 break
         return result, num_read
 
+    @staticmethod
+    def read_socket(socket):
+        num_read = 0
+        result = 0
+        while True:
+            read = socket.recv(1)
+            if len(read) == 0:
+                raise ValueError("Reached EOF")
+            read = read[0]
+            value = read & 0x7F
+            result |= (value << (7 * num_read))
+            num_read += 1
+            if num_read > 5:
+                raise ValueError("VarInt is too big")
+            if (read & 0x80) != 128:
+                break
+        return result, num_read
+
 class String:
     @staticmethod
     def write(data: str) -> bytes:
