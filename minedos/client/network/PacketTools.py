@@ -21,6 +21,9 @@ class PacketBuilder:
     
     def write_unsigned_short(self, data: int) -> None:
         self.packet_bytes.write(struct.pack(">H", data))
+    
+    def write_boolean(self, data: bool) -> None:
+        self.packet_bytes.write(DataTypes.Boolean.write(data))
 
 class PacketReader:
     def __init__(self, data) -> None:
@@ -37,7 +40,12 @@ class PacketReader:
     
     def read_unsigned_short(self) -> int:
         return DataTypes.UnsignedShort.read(self.stream)
+    
+    def read_boolean(self) -> bool:
+        return DataTypes.Boolean.read(self.stream)
 
     def verify_tell(self, length: int) -> None:
         return self.stream.tell() == length
+    
+    
     

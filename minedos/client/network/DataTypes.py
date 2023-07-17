@@ -54,3 +54,13 @@ class UnsignedShort:
     @staticmethod
     def read(stream) -> int:
         return struct.unpack(">H", stream.read(2))[0]
+    
+class Boolean:
+    @staticmethod
+    def write(data: bool) -> bytes:
+        return struct.pack("?", data)
+    
+    @staticmethod
+    def read(stream) -> bool:
+        return struct.unpack("?", stream.read(1))[0]
+    
