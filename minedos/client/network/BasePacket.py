@@ -17,7 +17,7 @@ class BasePacket:
 
     @staticmethod
     def read(total_length: int, data: bytes): # -> BasePacket instance
-        return None
+        raise NotImplementedError("This method must be implemented in a subclass")
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}(packet_id={self.packet_id})"
