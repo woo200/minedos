@@ -56,14 +56,17 @@ class MinecraftClient:
     def connect(self):
         self.client_socket.connect((self.arguments["host"], self.arguments["port"]))
 
-        handshake_packet = minedos.client.network.HandshakePacket(self.arguments["protocol_version"], 
+        handshake_packet = minedos.client.network.clientbound.HandshakePacket(self.arguments["protocol_version"], 
                                                                   self.arguments["host"], 
                                                                   self.arguments["port"], 
                                                                   2) # Send login handshake packet
         self.client_socket.send(handshake_packet.get_bytes())
         self.client_state = ClientState.LOGIN
 
-        login_start_packet = minedos.client.network.ServerboundLoginStartPacket(self.arguments["username"],
+        login_start_packet = minedos.client.network.serverbound.LoginStartPacket(self.arguments["username"],
                                                                                 self.arguments["uuid"])
         self.client_socket.send(login_start_packet.get_bytes())
-        # TODO: Implement login success packet
+        
+        length, packet_id, data = minedos.client.network.PacketTools.read_packet(self.client_socket)
+        encryption_request_packet = minedos.client.network.clientbound.EncryptionRequestPacket.read(length-1, data)
+        print(encryption_request_packet)

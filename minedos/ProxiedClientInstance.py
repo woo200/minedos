@@ -1,11 +1,8 @@
 # Copyright (c) John Woo. All rights reserved.
 # Licensed under the MIT License. See LICENSE file in the project root for full license information.
 
-from javascript import require
 import sockslib
 import socket
-mineflayer = require('mineflayer')
-
 
 class ProxiedClientInstance:
     def create(self, *args, **kwargs) -> None:
