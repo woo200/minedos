@@ -5,20 +5,20 @@ import struct
 from minedos.client.network import BasePacket
 from minedos.client.network import PacketBuilder, PacketReader
 
-class LoginStartPacket(BasePacket):
-    def __init__(self, username: str, uuid: str = None) -> None:
-        super().__init__(0x00)
+class EncryptionRequestPacket(BasePacket):
+    def __init__(self, public_key, verify_token, server_id: str = "") -> None:
+        super().__init__(0x01)
 
-        self.username = username
-        self.uuid = uuid
+        self.public_key = public_key
+        self.verify_token = verify_token
+        self.server_id = server_id
     
     def build(self):
         builder = PacketBuilder()
 
-        builder.write_string(self.username)
-        builder.write_boolean(self.uuid is not None)
-        if self.uuid is not None:
-            builder.write_uuid(self.uuid)
+        builder.write_string(self.server_id)
+        builder.write_bytearray(self.public_key)
+        builder.write_bytearray(self.verify_token)
 
         return builder.get_bytes()
 
@@ -27,11 +27,9 @@ class LoginStartPacket(BasePacket):
         reader = PacketReader(data)
 
         try:
-            username = reader.read_string()
-            has_uuid = reader.read_boolean()
-            uuid = None
-            if has_uuid:
-                uuid = reader.read_uuid()
+            server_id = reader.read_string()
+            public_key = reader.read_bytearray()
+            verify_token = reader.read_bytearray()
         except (ValueError, struct.error):
             raise ValueError("Invalid packet data")
 
@@ -39,7 +37,7 @@ class LoginStartPacket(BasePacket):
         if not reader.verify_tell(total_length):
             raise ValueError(f"Packet length mismatch (expected {total_length} bytes, got {reader.stream.tell()} bytes)")
 
-        return LoginStartPacket(username, uuid)
+        return EncryptionRequestPacket(public_key, verify_token, server_id)
 
     def __repr__(self) -> str:
-        return f"{type(self).__name__}(username={self.username}, uuid={self.uuid})"
+        return f"{type(self).__name__}(server_id={self.server_id}, public_key={self.public_key}, verify_token={self.verify_token})"

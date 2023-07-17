@@ -5,7 +5,7 @@ import struct
 from minedos.client.network import BasePacket
 from minedos.client.network import PacketBuilder, PacketReader
 
-class ServerboundHandshakePacket(BasePacket):
+class HandshakePacket(BasePacket):
     def __init__(self, protocol_version: int, server_address: str, server_port: int, next_state: int) -> None:
         super().__init__(0x00)
 
@@ -40,7 +40,7 @@ class ServerboundHandshakePacket(BasePacket):
         if not reader.verify_tell(total_length):
             raise ValueError(f"Packet length mismatch (expected {total_length} bytes, got {reader.stream.tell()} bytes)")
 
-        return ServerboundHandshakePacket(protocol_version, server_address, server_port, next_state)
+        return HandshakePacket(protocol_version, server_address, server_port, next_state)
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}(protocol_version={self.protocol_version}, server_address={self.server_address}, server_port={self.server_port}, next_state={self.next_state})"
