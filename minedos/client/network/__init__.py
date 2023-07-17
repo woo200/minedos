@@ -4,3 +4,6 @@
 from minedos.client.network.BasePacket import BasePacket
 from minedos.client.network.DataTypes import *
 from minedos.client.network.PacketTools import *
+
+import minedos.client.network.serverbound
+import minedos.client.network.clientbound
