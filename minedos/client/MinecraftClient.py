@@ -4,6 +4,14 @@
 import socket
 import sockslib 
 
+import minedos.client.network
+
+class ClientState:
+    HANDSHAKE = 0
+    STATUS = 1
+    LOGIN = 2
+    PLAY = 3
+
 class MinecraftClient:
     def __init__(self, *args, **kwargs):
         defaults = {
@@ -42,6 +50,20 @@ class MinecraftClient:
                                          proxy['auth'])
         else:
             self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # Create client socket
+        
+        self.client_state = ClientState.HANDSHAKE 
 
     def connect(self):
         self.client_socket.connect((self.arguments["host"], self.arguments["port"]))
+
+        handshake_packet = minedos.client.network.HandshakePacket(self.arguments["protocol_version"], 
+                                                                  self.arguments["host"], 
+                                                                  self.arguments["port"], 
+                                                                  2) # Send login handshake packet
+        self.client_socket.send(handshake_packet.get_bytes())
+        self.client_state = ClientState.LOGIN
+
+        login_start_packet = minedos.client.network.ServerboundLoginStartPacket(self.arguments["username"],
+                                                                                self.arguments["uuid"])
+        self.client_socket.send(login_start_packet.get_bytes())
+        # TODO: Implement login success packet
