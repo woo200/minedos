@@ -6,6 +6,7 @@ import sockslib
 import dns.resolver
 
 import minedos.client.network
+import minedos.client.chat
 
 from Crypto.Random import get_random_bytes
 from Crypto.Cipher import AES, PKCS1_v1_5
@@ -98,7 +99,7 @@ class MinecraftClient:
         encryption_response_packet = minedos.client.network.serverbound.EncryptionResponsePacket(encrypted_session_key, 
                                                                                                  encrypted_verify_token)
         self.client_socket.send(encryption_response_packet.get_bytes())
-        
+
         self.client_socket = minedos.client.network.AESEncryptedSocket(session_key, 
                                                                        session_key, 
                                                                        self.client_socket)
@@ -106,4 +107,5 @@ class MinecraftClient:
         length, packet_id, data = minedos.client.network.PacketTools.PacketReader.read_packet(self.client_socket)
         if packet_id == 0x00:
             login_fail_packet = minedos.client.network.clientbound.LoginDisconnectReasonPacket.read(length-1, data)
-            print(login_fail_packet)
+
+            print(login_fail_packet.reason)
