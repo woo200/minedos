@@ -61,10 +61,10 @@ class PacketReader:
         return self.stream.tell() == length
 
     @staticmethod
-    def receive_packet(socket):
+    def read_packet(socket):
         socket.settimeout(5)
         try:
-            length = DataTypes.VarInt.read_socket(socket)
+            length, _ = DataTypes.VarInt.read_socket(socket)
             packet_id = socket.recv(1)[0]
             data = socket.recv(length - 1)
             return length, packet_id, data

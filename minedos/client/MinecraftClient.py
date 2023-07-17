@@ -85,6 +85,6 @@ class MinecraftClient:
         print("Sending login start packet")
         self.client_socket.send(login_start_packet.get_bytes())
         
-        length, packet_id, data = minedos.client.network.PacketTools.read_packet(self.client_socket)
+        length, packet_id, data = minedos.client.network.PacketTools.PacketReader.read_packet(self.client_socket)
         encryption_request_packet = minedos.client.network.clientbound.EncryptionRequestPacket.read(length-1, data)
         print(encryption_request_packet)

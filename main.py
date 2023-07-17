@@ -3,5 +3,5 @@
 
 import minedos
 
-client = minedos.MinecraftClient("localhost", 25565)
+client = minedos.MinecraftClient(host="hypixel.net", username="Minedos")
 client.connect()
