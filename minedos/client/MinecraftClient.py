@@ -3,6 +3,7 @@
 
 import socket
 import sockslib 
+import dns.resolver
 
 import minedos.client.network
 
@@ -17,7 +18,7 @@ class MinecraftClient:
         defaults = {
             "protocol_version": 763,
             "host": None,
-            "port": 25565,
+            "port": None,
             "username": None,
             "uuid": None,
             "proxy": None # Dict with keys: proxy_addr, proxy_port(opt), type (opt), ipv6 (opt), auth (opt)
@@ -51,20 +52,37 @@ class MinecraftClient:
         else:
             self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # Create client socket
         
-        self.client_state = ClientState.HANDSHAKE 
+        self.__resolve_srv_record()
+        self.client_state = ClientState.HANDSHAKE
+
+    def __resolve_srv_record(self):
+        try:
+            answers = dns.resolver.query(f'_minecraft._tcp.{self.arguments["host"]}', 'SRV')
+        except dns.resolver.NoAnswer: # No SRV record? Set defaults
+            self.real_host = self.arguments['host']
+            self.arguments['port'] = 25565
+            return
+        
+        for answer in answers: # SRV record found, if port is set, use that, otherwise use reccomended
+            if self.arguments['port'] is None:
+                self.arguments['port'] = answer.port
+            self.real_host = str(answer.target).rstrip('.')
+            return
 
     def connect(self):
-        self.client_socket.connect((self.arguments["host"], self.arguments["port"]))
+        self.client_socket.connect((self.real_host, self.arguments["port"]))
 
-        handshake_packet = minedos.client.network.clientbound.HandshakePacket(self.arguments["protocol_version"], 
+        handshake_packet = minedos.client.network.serverbound.HandshakePacket(self.arguments["protocol_version"], 
                                                                   self.arguments["host"], 
                                                                   self.arguments["port"], 
                                                                   2) # Send login handshake packet
+        print("Sending handshake packet")
         self.client_socket.send(handshake_packet.get_bytes())
         self.client_state = ClientState.LOGIN
 
         login_start_packet = minedos.client.network.serverbound.LoginStartPacket(self.arguments["username"],
                                                                                 self.arguments["uuid"])
+        print("Sending login start packet")
         self.client_socket.send(login_start_packet.get_bytes())
         
         length, packet_id, data = minedos.client.network.PacketTools.read_packet(self.client_socket)
